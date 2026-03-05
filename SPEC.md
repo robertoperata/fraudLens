@@ -22,11 +22,11 @@ FraudLens is a full-stack application that manages and analyzes user session dat
 | `ip`        | String                            | Not null                                         |
 | `country`   | String                            | Not null                                         |
 | `device`    | String                            | Not null                                         |
-| `timestamp` | ISO 8601 datetime with timezone   | Not null                                         |
+| `timestamp` | String (ISO 8601 datetime)        | Not null, stored as VARCHAR(50)                  |
 | `status`    | Enum: `SAFE`, `SUSPICIOUS`, `DANGEROUS` | Not null, defaults to `SAFE`            |
 | `riskScore` | Integer (0–100)                   | **Not in original spec entity.** Computed enrichment from §4, not persisted — derived on read |
 
-> **Design note on `id`**: The PDF examples use `"abc-123"` and `"evt_001"` — clearly not UUIDs. We store IDs as `String` (VARCHAR) and auto-generate a UUID v4 value server-side on creation. This keeps the Java type as `String` (path variables stay `@PathVariable String id`), avoids 400 errors on non-UUID input, and produces globally unique IDs without sacrificing the flexibility implied by the examples.
+> **Design note on `id`**: Session and Event IDs are stored as `String` (VARCHAR(255)) with a server-generated UUID v4 value. This keeps path variables as `@PathVariable String id`, avoids 400 errors on non-UUID input, and matches the flexible ID style implied by the PDF examples (`"abc-123"`, `"evt_001"`). The `User` entity uses a DB-generated `BIGINT` identity instead — it is never exposed in API path variables.
 
 ### 2.2 Event
 
@@ -36,18 +36,19 @@ FraudLens is a full-stack application that manages and analyzes user session dat
 | `sessionId`  | String                                       | Not null, FK → `sessions.id`. **Must appear as a top-level field in all Event API responses** (the PDF model explicitly includes it) |
 | `type`       | Enum: `PAGE_VISIT`, `FORM_SUBMIT`, `LOGIN_ATTEMPT` | Not null                           |
 | `url`        | String                                       | Not null                                 |
-| `durationMs` | Integer                                      | Not null                                 |
-| `metadata`   | JSON object                                  | Nullable                                 |
+| `durationMs` | Long                                         | Not null                                 |
+| `metadata`   | String (JSON text)                           | Nullable                                 |
 
 ### 2.3 User (Auth)
 
 > **Design decision — not in the PDF spec.** The PDF only requires "a simple form that authenticates the user". A `users` table is our design choice to support proper JWT-backed authentication without hardcoded credentials. It is seeded at startup via an `ApplicationRunner` (see CLAUDE.md §3.13).
 
-| Field      | Type    | Constraints                     |
-|------------|---------|---------------------------------|
-| `id`       | String  | Primary key, server-generated   |
-| `username` | String  | Not null, unique                |
-| `password` | String  | Not null, BCrypt hashed         |
+| Field      | Type    | Constraints                                      |
+|------------|---------|--------------------------------------------------|
+| `id`       | Long    | Primary key, DB-generated (`BIGINT IDENTITY`)    |
+| `username` | String  | Not null, unique                                 |
+| `password` | String  | Not null, BCrypt hashed                          |
+| `role`     | String  | Not null (e.g. `ADMIN`, `USER`)                  |
 
 ### 2.4 Referential Integrity Constraints
 

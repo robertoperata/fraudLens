@@ -21,14 +21,10 @@ fraudlens/
 │   │   │   │   ├── common/           # GlobalExceptionHandler, ErrorResponse, base DTOs
 │   │   │   │   └── config/           # SecurityConfig, CorsConfig, OpenApiConfig, ActuatorConfig
 │   │   │   └── resources/
-│   │   │       ├── application.yml
-│   │   │       ├── application-local.yml
+│   │   │       ├── application.properties
 │   │   │       └── db/changelog/
-│   │   │           ├── db.changelog-master.xml
-│   │   │           ├── V001__create_users.sql
-│   │   │           ├── V002__create_sessions.sql
-│   │   │           ├── V003__create_events.sql
-│   │   │           └── V004__seed_dev_data.sql   # context: dev only
+│   │   │           ├── db.changelog-master.yaml
+│   │   │           └── 001-create-schema.sql
 │   │   └── test/
 │   │       └── java/com/fraudlens/
 │   │           ├── session/          # SessionControllerTest, SessionServiceTest
@@ -79,7 +75,7 @@ fraudlens/
 ### Backend
 | Dependency | Version / Artifact |
 |---|---|
-| Java | 25 |
+| Java | 21 |
 | Spring Boot | 3.3.6 |
 | Spring Web | (via Spring Boot BOM) |
 | Spring Security | 6.x (via Spring Boot BOM) |
@@ -91,8 +87,8 @@ fraudlens/
 | Liquibase | (via Spring Boot BOM) |
 | PostgreSQL Driver | (via Spring Boot BOM) |
 | JJWT | `io.jsonwebtoken:jjwt-api`, `jjwt-impl`, `jjwt-jackson` (0.12.x) |
-| Lombok | Latest stable |
-| MapStruct | `org.mapstruct:mapstruct` + `mapstruct-processor` (1.5.x) |
+| Lombok | `1.18.42` |
+| MapStruct | `org.mapstruct:mapstruct` + `mapstruct-processor` (1.6.3) |
 | Bucket4j | `com.bucket4j:bucket4j-core` (8.x) for rate limiting |
 
 ### Frontend
@@ -141,101 +137,106 @@ Complete `SecurityConfig` pattern:
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static final String[] PUBLIC_PATHS = {
+        "/auth/login",
+        "/actuator/health",
+        "/actuator/health/**",
+        "/swagger-ui.html",
+        "/swagger-ui/**",
+        "/v3/api-docs/**"
+    };
+
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
-        return http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/login", "/actuator/health").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers(PUBLIC_PATHS).permitAll()
                 .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            .build();
+            );
+        // JwtAuthenticationFilter added here before UsernamePasswordAuthenticationFilter
+        // when auth package is implemented.
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
 ```
 
 ### 3.2 PostgreSQL Datasource & Liquibase Configuration
 
-`application.yml` — never hardcode credentials:
+`application.properties` — credentials default to local docker-compose values so no profile or env vars are needed for local development. Never hardcode production credentials:
+
+```properties
+# Server
+server.port=${SERVER_PORT:8080}
+
+# Datasource — local defaults match docker-compose.yml credentials
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fraudlens}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:fraudlens}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:fraudlens}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# JPA / Hibernate
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.properties.hibernate.format_sql=false
+spring.jpa.show-sql=false
+
+# Liquibase
+spring.liquibase.change-log=classpath:db/changelog/db.changelog-master.yaml
+
+# JWT — read by JwtService via @Value
+jwt.secret=${JWT_SECRET:dev-secret-change-in-production-min-32chars}
+jwt.expiration=3600000
+
+# Spring AI - Anthropic
+spring.ai.anthropic.api-key=${ANTHROPIC_API_KEY:not-configured}
+spring.ai.anthropic.chat.options.model=claude-haiku-4-5-20251001
+spring.ai.anthropic.chat.options.max-tokens=1024
+
+# Actuator
+management.endpoints.web.exposure.include=health
+management.endpoint.health.show-details=when-authorized
+management.health.livenessstate.enabled=true
+management.health.readinessstate.enabled=true
+
+# Logging
+logging.level.com.fraudlens=DEBUG
+```
+
+> **No `application-local.yml`**: there is a single `application.properties`. Local defaults are embedded via `${ENV_VAR:default}`. In production, set real env vars to override.
+
+**Liquibase changelog master** (`db.changelog-master.yaml`):
 
 ```yaml
-spring:
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fraudlens}  # fallback is non-sensitive (no credentials)
-    username: ${SPRING_DATASOURCE_USERNAME}     # no fallback — must be set explicitly
-    password: ${SPRING_DATASOURCE_PASSWORD}     # no fallback — must be set explicitly
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: validate          # NEVER use create-drop; Liquibase owns the schema
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: false
-    show-sql: false               # NEVER true in production profile
-  liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.xml
-    enabled: true
+databaseChangeLog:
+  - include:
+      file: db/changelog/001-create-schema.sql
+      relativeToChangelogFile: false
 ```
 
-`application-local.yml` — safe local development overrides:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/fraudlens
-    username: fraudlens
-    password: fraudlens
-  jpa:
-    show-sql: true
-  liquibase:
-    contexts: dev                 # activates seed data changesets in local only
-```
-
-**Liquibase changelog master** (`db.changelog-master.xml`):
-
-```xml
-<databaseChangeLog
-    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.x.xsd">
-
-  <include file="db/changelog/V001__create_users.sql"    relativeToChangelogFile="false"/>
-  <include file="db/changelog/V002__create_sessions.sql" relativeToChangelogFile="false"/>
-  <include file="db/changelog/V003__create_events.sql"   relativeToChangelogFile="false"/>
-  <include file="db/changelog/V004__seed_dev_data.sql"   relativeToChangelogFile="false"/>
-</databaseChangeLog>
-```
-
-**Migration files are plain SQL.** Each file must begin with the Liquibase SQL format header and declare its changeset(s) as structured comments — Liquibase parses these to track which changesets have run:
+**Migration files are plain SQL.** Each file must begin with the Liquibase SQL format header. Multiple changesets can live in a single file — Liquibase tracks each one independently by its changeset ID:
 
 ```sql
--- V001__create_users.sql
+-- 001-create-schema.sql
 --liquibase formatted sql
 
---changeset fraudlens:1
-CREATE TABLE users (
-    id       VARCHAR(36)  PRIMARY KEY,
-    username VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL
-);
--- id is a UUID v4 string generated by the application (@PrePersist), not by the DB
+--changeset fraudlens:001-create-sessions
+CREATE TABLE IF NOT EXISTS sessions ( ... );
+
+--changeset fraudlens:001-create-events
+CREATE TABLE IF NOT EXISTS events ( ... );
+
+--changeset fraudlens:001-create-users
+CREATE TABLE IF NOT EXISTS users ( ... );
 ```
 
-```sql
--- V004__seed_dev_data.sql
---liquibase formatted sql
-
---changeset fraudlens:4 context:dev
-INSERT INTO ... ;
-```
-
-The `context:dev` label on a changeset means it only executes when `spring.liquibase.contexts=dev` is active (set in `application-local.yml`). It is never applied in production.
+Add new migration files (e.g. `002-add-index.sql`) for future schema changes and include them in `db.changelog-master.yaml`. Never modify an already-applied changeset.
 
 ### 3.3 Entity Design — Cascade Delete & Bidirectional Relationship
 
