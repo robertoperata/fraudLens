@@ -13,13 +13,17 @@ fraudlens/
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/com/fraudlens/
-│   │   │   │   ├── auth/             # JWT filter, login controller, user entity
-│   │   │   │   ├── session/          # Session entity, controller, service, repository
-│   │   │   │   ├── event/            # Event entity, controller, service, repository
-│   │   │   │   ├── risk/             # RiskScoringService (rule engine)
-│   │   │   │   ├── ai/               # AIRiskSummaryService (Spring AI)
-│   │   │   │   ├── common/           # GlobalExceptionHandler, ErrorResponse, base DTOs
-│   │   │   │   └── config/           # SecurityConfig, CorsConfig, OpenApiConfig, ActuatorConfig
+│   │   │   │   ├── controller/       # SessionController, EventController, AuthController
+│   │   │   │   ├── service/          # SessionService, EventService, RiskScoringService, AIRiskSummaryService, AdminUserSeeder
+│   │   │   │   ├── repository/       # SessionRepository, EventRepository, UserRepository
+│   │   │   │   ├── domain/           # Session, Event, User (JPA entities + enums: SessionStatus, EventType)
+│   │   │   │   ├── dto/              # All DTOs: SessionRequestDTO, SessionResponseDTO, EventRequestDTO,
+│   │   │   │   │                     #   EventResponseDTO, LoginRequestDTO, LoginResponseDTO,
+│   │   │   │   │                     #   SessionSearchRequestDTO, RiskSummaryResponseDTO, ErrorResponseDTO
+│   │   │   │   ├── mapper/           # SessionMapper, EventMapper (MapStruct interfaces)
+│   │   │   │   ├── security/         # JwtAuthenticationFilter, JwtService, UserDetailsServiceImpl
+│   │   │   │   ├── exception/        # GlobalExceptionHandler, ResourceNotFoundException
+│   │   │   │   └── config/           # SecurityConfig, CorsConfig, OpenApiConfig
 │   │   │   └── resources/
 │   │   │       ├── application.properties
 │   │   │       └── db/changelog/
@@ -27,10 +31,10 @@ fraudlens/
 │   │   │           └── 001-create-schema.sql
 │   │   └── test/
 │   │       └── java/com/fraudlens/
-│   │           ├── session/          # SessionControllerTest, SessionServiceTest
-│   │           ├── event/            # EventControllerTest
-│   │           ├── risk/             # RiskScoringServiceTest
-│   │           └── auth/             # AuthControllerTest
+│   │           ├── controller/       # SessionControllerTest, EventControllerTest, AuthControllerTest
+│   │           ├── service/          # SessionServiceTest, EventServiceTest, RiskScoringServiceTest
+│   │           ├── mapper/           # SessionMapperTest
+│   │           └── exception/        # GlobalExceptionHandlerTest
 │   └── pom.xml
 ├── frontend/                         # React + Vite + TypeScript application
 │   ├── src/
@@ -331,7 +335,7 @@ JPA entities use plain names with no suffix: `Session`, `Event`, `User`.
 Use **MapStruct** for all entity-to-DTO and DTO-to-entity conversions. Do not write manual mapping boilerplate.
 
 ```java
-// session/SessionMapper.java
+// mapper/SessionMapper.java
 @Mapper(componentModel = "spring")
 public interface SessionMapper {
 
@@ -342,7 +346,7 @@ public interface SessionMapper {
     List<SessionResponseDTO> toResponseDTOList(List<Session> sessions);
 }
 
-// event/EventMapper.java
+// mapper/EventMapper.java
 @Mapper(componentModel = "spring")
 public interface EventMapper {
 
