@@ -2,6 +2,10 @@
 
 Full-stack fraud session analysis application — Spring Boot backend, React frontend.
 
+## API Documentation
+
+Swagger UI is available at http://localhost:8080/swagger-ui/index.html once the backend is running.
+
 ---
 
 ## Design Decisions & Spec Deviations
