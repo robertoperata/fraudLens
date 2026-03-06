@@ -776,16 +776,16 @@ public class RiskScoringService {
 
 ## 6. Test Coverage Targets
 
-| Layer | Approach | Target Coverage |
-|---|---|---|
-| `RiskScoringService` | Unit tests, mocked event lists | **100%** — every rule branch tested |
-| `SessionService` + `EventService` | Unit tests with mocked repositories (`@ExtendWith(MockitoExtension.class)`) | **80%+** |
-| `GlobalExceptionHandler` | Unit tests for each exception type | **100%** |
-| `SessionController` | `@WebMvcTest` + `MockMvc` — all endpoints, all HTTP methods, auth scenarios | **80%+** |
-| `EventController` | `@WebMvcTest` + `MockMvc` | **80%+** |
-| `AuthController` | `MockMvc` tests: valid login, invalid login, missing token, expired token | **100%** |
-| `SessionMapper` (MapStruct) | Unit tests verifying field mapping correctness | Required |
-| Overall line coverage | Jacoco enforced in Maven build | **70%+** |
+| Layer | Approach | Target Coverage | Done |
+|---|---|---|---|
+| `RiskScoringService` | Unit tests, mocked event lists | **100%** — every rule branch tested | ✅ 31 tests |
+| `SessionService` + `EventService` | Unit tests with mocked repositories (`@ExtendWith(MockitoExtension.class)`) | **80%+** | ✅ 13 + 8 tests |
+| `GlobalExceptionHandler` | Unit tests for each exception type | **100%** | ✅ 7 tests (all 6 handlers + AuthenticationException) |
+| `SessionController` | `@WebMvcTest` + `MockMvc` — all endpoints, all HTTP methods, auth scenarios | **80%+** | ✅ 23 tests |
+| `EventController` | `@WebMvcTest` + `MockMvc` | **80%+** | ✅ 11 tests |
+| `AuthController` | `MockMvc` tests: valid login, invalid login, missing token, expired token | **100%** | ✅ 6 tests |
+| `SessionMapper` (MapStruct) | Unit tests verifying field mapping correctness | Required | ✅ 10 tests |
+| Overall line coverage | Jacoco enforced in Maven build | **70%+** | ✅ 109 tests total |
 
 For `@WebMvcTest` slice tests, mock the service layer with `@MockBean`. This keeps controller tests fast and isolated without requiring a database connection.
 

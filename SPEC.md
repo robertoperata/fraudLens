@@ -153,81 +153,81 @@ Placeholder categories:
 
 ### 5.1 Authentication
 
-| # | Given | When | Then |
-|---|-------|------|------|
-| AC-AUTH-01 | Valid credentials (`username`, `password`) | `POST /auth/login` | `200 OK` + JWT token in response body |
-| AC-AUTH-02 | Invalid credentials | `POST /auth/login` | `401 Unauthorized` |
-| AC-AUTH-03 | No `Authorization` header | Any protected endpoint is called | `401 Unauthorized` |
-| AC-AUTH-04 | Expired JWT | Any protected endpoint is called | `401 Unauthorized` |
-| AC-AUTH-05 | Malformed JWT | Any protected endpoint is called | `401 Unauthorized` |
+| # | Given | When | Then | Done |
+|---|-------|------|------|------|
+| AC-AUTH-01 | Valid credentials (`username`, `password`) | `POST /auth/login` | `200 OK` + JWT token in response body | ✅ |
+| AC-AUTH-02 | Invalid credentials | `POST /auth/login` | `401 Unauthorized` | ✅ |
+| AC-AUTH-03 | No `Authorization` header | Any protected endpoint is called | `401 Unauthorized` | ✅ |
+| AC-AUTH-04 | Expired JWT | Any protected endpoint is called | `401 Unauthorized` | ✅ |
+| AC-AUTH-05 | Malformed JWT | Any protected endpoint is called | `401 Unauthorized` | ✅ |
 
 ### 5.2 Sessions — CRUD
 
-| # | Given | When | Then |
-|---|-------|------|------|
-| AC-SES-01 | Valid JWT | `GET /sessions` | `200 OK` + array of sessions each containing a `riskScore` field |
-| AC-SES-02 | Valid JWT + valid body | `POST /sessions` | `201 Created` + created session object with generated `id` |
-| AC-SES-03 | Valid JWT + missing required field | `POST /sessions` | `400 Bad Request` + field-level validation errors |
-| AC-SES-04 | Valid JWT + invalid status value | `POST /sessions` | `400 Bad Request` |
-| AC-SES-05 | Valid JWT + existing session id | `GET /sessions/{id}` | `200 OK` + session object with nested `events` and `riskScore` |
-| AC-SES-06 | Valid JWT + non-existing id | `GET /sessions/{id}` | `404 Not Found` |
-| AC-SES-07 | Valid JWT + existing id + valid body | `PUT /sessions/{id}` | `200 OK` + updated session |
-| AC-SES-08 | Valid JWT + existing id | `DELETE /sessions/{id}` | `204 No Content` |
-| AC-SES-09 | Valid JWT + non-existing id | `DELETE /sessions/{id}` | `404 Not Found` |
+| # | Given | When | Then | Done |
+|---|-------|------|------|------|
+| AC-SES-01 | Valid JWT | `GET /sessions` | `200 OK` + array of sessions each containing a `riskScore` field | ✅ |
+| AC-SES-02 | Valid JWT + valid body | `POST /sessions` | `201 Created` + created session object with generated `id` | ✅ |
+| AC-SES-03 | Valid JWT + missing required field | `POST /sessions` | `400 Bad Request` + field-level validation errors | ✅ |
+| AC-SES-04 | Valid JWT + invalid status value | `POST /sessions` | `400 Bad Request` | ✅ |
+| AC-SES-05 | Valid JWT + existing session id | `GET /sessions/{id}` | `200 OK` + session object with nested `events` and `riskScore` | ✅ |
+| AC-SES-06 | Valid JWT + non-existing id | `GET /sessions/{id}` | `404 Not Found` | ✅ |
+| AC-SES-07 | Valid JWT + existing id + valid body | `PUT /sessions/{id}` | `200 OK` + updated session | ✅ |
+| AC-SES-08 | Valid JWT + existing id | `DELETE /sessions/{id}` | `204 No Content` | ✅ |
+| AC-SES-09 | Valid JWT + non-existing id | `DELETE /sessions/{id}` | `404 Not Found` | ✅ |
 
 ### 5.3 Cascade Delete
 
-| # | Given | When | Then |
-|---|-------|------|------|
-| AC-CAS-01 | Session S1 has events E1, E2, E3 | `DELETE /sessions/S1` | `204 No Content` and subsequent `GET /sessions/S1/events` returns `404` or empty list |
-| AC-CAS-02 | Session S1 has events E1, E2, E3 | `DELETE /sessions/S1` (verified via direct DB query) | Events table contains no rows with `session_id = S1` |
+| # | Given | When | Then | Done |
+|---|-------|------|------|------|
+| AC-CAS-01 | Session S1 has events E1, E2, E3 | `DELETE /sessions/S1` | `204 No Content` and subsequent `GET /sessions/S1/events` returns `404` or empty list | ⏳ Integration test (requires DB) |
+| AC-CAS-02 | Session S1 has events E1, E2, E3 | `DELETE /sessions/S1` (verified via direct DB query) | Events table contains no rows with `session_id = S1` | ⏳ Integration test (requires DB) |
 
 ### 5.4 Sessions — Search
 
-| # | Given | When | Then |
-|---|-------|------|------|
-| AC-SRCH-01 | Sessions with mixed statuses exist | `POST /sessions/search` with `{ "status": "DANGEROUS" }` | `200 OK` + only `DANGEROUS` sessions |
-| AC-SRCH-02 | Sessions from multiple countries exist | `POST /sessions/search` with `{ "country": "IT" }` | `200 OK` + only sessions with `country = "IT"` |
-| AC-SRCH-03 | Multiple sessions exist | `POST /sessions/search` with `{ "sortBy": "timestamp", "sortDir": "desc" }` | Sessions ordered newest-first |
-| AC-SRCH-04 | — | `POST /sessions/search` with empty body `{}` | `200 OK` + all sessions, default sort applied |
-| AC-SRCH-05 | — | `POST /sessions/search` with multiple filters (e.g. `status` + `country`) | Only sessions matching **all** conditions returned |
+| # | Given | When | Then | Done |
+|---|-------|------|------|------|
+| AC-SRCH-01 | Sessions with mixed statuses exist | `POST /sessions/search` with `{ "status": "DANGEROUS" }` | `200 OK` + only `DANGEROUS` sessions | ✅ |
+| AC-SRCH-02 | Sessions from multiple countries exist | `POST /sessions/search` with `{ "country": "IT" }` | `200 OK` + only sessions with `country = "IT"` | ✅ |
+| AC-SRCH-03 | Multiple sessions exist | `POST /sessions/search` with `{ "sortBy": "timestamp", "sortDir": "desc" }` | Sessions ordered newest-first | ✅ |
+| AC-SRCH-04 | — | `POST /sessions/search` with empty body `{}` | `200 OK` + all sessions, default sort applied | ✅ |
+| AC-SRCH-05 | — | `POST /sessions/search` with multiple filters (e.g. `status` + `country`) | Only sessions matching **all** conditions returned | ✅ (unit-tested in SessionServiceTest) |
 
 ### 5.5 Events
 
-| # | Given | When | Then |
-|---|-------|------|------|
-| AC-EVT-01 | Valid JWT + existing session | `GET /sessions/{id}/events` | `200 OK` + list of events ordered by insertion time |
-| AC-EVT-02 | Valid JWT + existing session + valid body | `POST /sessions/{id}/events` | `201 Created` + event object with generated `id` |
-| AC-EVT-03 | Valid JWT + non-existing session | `POST /sessions/{id}/events` | `404 Not Found` |
-| AC-EVT-04 | Valid JWT + existing event | `DELETE /sessions/{id}/events/{eventId}` | `204 No Content` |
-| AC-EVT-05 | Valid JWT + non-existing eventId | `DELETE /sessions/{id}/events/{eventId}` | `404 Not Found` |
-| AC-EVT-06 | Valid JWT + eventId belonging to a different session | `DELETE /sessions/{id}/events/{eventId}` | `404 Not Found` |
+| # | Given | When | Then | Done |
+|---|-------|------|------|------|
+| AC-EVT-01 | Valid JWT + existing session | `GET /sessions/{id}/events` | `200 OK` + list of events ordered by insertion time | ✅ |
+| AC-EVT-02 | Valid JWT + existing session + valid body | `POST /sessions/{id}/events` | `201 Created` + event object with generated `id` | ✅ |
+| AC-EVT-03 | Valid JWT + non-existing session | `POST /sessions/{id}/events` | `404 Not Found` | ✅ |
+| AC-EVT-04 | Valid JWT + existing event | `DELETE /sessions/{id}/events/{eventId}` | `204 No Content` | ✅ |
+| AC-EVT-05 | Valid JWT + non-existing eventId | `DELETE /sessions/{id}/events/{eventId}` | `404 Not Found` | ✅ |
+| AC-EVT-06 | Valid JWT + eventId belonging to a different session | `DELETE /sessions/{id}/events/{eventId}` | `404 Not Found` | ✅ |
 
 ### 5.6 Risk Score
 
-| # | Given | When | Then |
-|---|-------|------|------|
-| AC-RISK-01 | Session with no events | `GET /sessions/{id}` | `riskScore` is `0` |
-| AC-RISK-02 | Session with a `LOGIN_ATTEMPT` followed by `FORM_SUBMIT` within 5 seconds | `GET /sessions/{id}` | `riskScore` increases by the defined rule weight |
-| AC-RISK-03 | Session with `FORM_SUBMIT` containing `card_number` or `cvv` in `metadata.formFields` | `GET /sessions/{id}` | `riskScore` increases by the defined rule weight |
-| AC-RISK-04 | Any session | `GET /sessions/{id}` | `riskScore` is always between `0` and `100` inclusive |
-| AC-RISK-05 | Session with maximum signals active simultaneously | `GET /sessions/{id}` | `riskScore` is capped at `100` |
+| # | Given | When | Then | Done |
+|---|-------|------|------|------|
+| AC-RISK-01 | Session with no events | `GET /sessions/{id}` | `riskScore` is `0` | ✅ |
+| AC-RISK-02 | Session with a `LOGIN_ATTEMPT` followed by `FORM_SUBMIT` within 5 seconds | `GET /sessions/{id}` | `riskScore` increases by the defined rule weight | ✅ |
+| AC-RISK-03 | Session with `FORM_SUBMIT` containing `card_number` or `cvv` in `metadata.formFields` | `GET /sessions/{id}` | `riskScore` increases by the defined rule weight | ✅ |
+| AC-RISK-04 | Any session | `GET /sessions/{id}` | `riskScore` is always between `0` and `100` inclusive | ✅ |
+| AC-RISK-05 | Session with maximum signals active simultaneously | `GET /sessions/{id}` | `riskScore` is capped at `100` | ✅ (max computed score is 95; `Math.min` cap verified) |
 
 ### 5.7 Health & Observability
 
-| # | Given | When | Then |
-|---|-------|------|------|
-| AC-HLTH-01 | Application is running + DB is reachable | `GET /actuator/health` | `200 OK` + `{ "status": "UP" }` |
-| AC-HLTH-02 | DB is unreachable | `GET /actuator/health` | `503 Service Unavailable` + `{ "status": "DOWN" }` |
-| AC-HLTH-03 | — | `GET /actuator/env` or any non-exposed actuator path | `404 Not Found` |
+| # | Given | When | Then | Done |
+|---|-------|------|------|------|
+| AC-HLTH-01 | Application is running + DB is reachable | `GET /actuator/health` | `200 OK` + `{ "status": "UP" }` | ⏳ Integration test (requires DB) |
+| AC-HLTH-02 | DB is unreachable | `GET /actuator/health` | `503 Service Unavailable` + `{ "status": "DOWN" }` | ⏳ Integration test (requires DB) |
+| AC-HLTH-03 | — | `GET /actuator/env` or any non-exposed actuator path | `404 Not Found` | ⏳ Integration test (requires running app) |
 
 ### 5.8 AI Risk Summary (Bonus)
 
-| # | Given | When | Then |
-|---|-------|------|------|
-| AC-AI-01 | Valid JWT + existing session with events | `POST /sessions/{id}/risk-summary` | `200 OK` + `{ "summary": "<natural language text>" }` |
-| AC-AI-02 | Valid JWT + non-existing session | `POST /sessions/{id}/risk-summary` | `404 Not Found` |
-| AC-AI-03 | AI provider is unavailable | `POST /sessions/{id}/risk-summary` | `503 Service Unavailable` + meaningful error message (no raw API error leaked) |
+| # | Given | When | Then | Done |
+|---|-------|------|------|------|
+| AC-AI-01 | Valid JWT + existing session with events | `POST /sessions/{id}/risk-summary` | `200 OK` + `{ "summary": "<natural language text>" }` | ✅ |
+| AC-AI-02 | Valid JWT + non-existing session | `POST /sessions/{id}/risk-summary` | `404 Not Found` | ✅ |
+| AC-AI-03 | AI provider is unavailable | `POST /sessions/{id}/risk-summary` | `503 Service Unavailable` + meaningful error message (no raw API error leaked) | ✅ |
 
 ### 5.9 Frontend — UI Behavior
 
