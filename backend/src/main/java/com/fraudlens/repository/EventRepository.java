@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, String> {
 
-    List<Event> findBySessionId(String sessionId);
+    List<Event> findBySessionIdOrderByCreatedAtDesc(String sessionId);
 
     Optional<Event> findByIdAndSessionId(String id, String sessionId);
 

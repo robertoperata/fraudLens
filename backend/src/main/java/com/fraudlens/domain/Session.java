@@ -36,8 +36,7 @@ public class Session {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    @Builder.Default
-    private SessionStatus status = SessionStatus.SAFE;
+    private SessionStatus status;
 
     // Cascade ALL + orphanRemoval = application-layer guarantee for cascade delete.
     // DB-level ON DELETE CASCADE in 001-create-schema.sql is the safety-net fallback.
@@ -47,6 +46,7 @@ public class Session {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
+    @OrderBy("createdAt DESC")
     @Builder.Default
     private List<Event> events = new ArrayList<>();
 

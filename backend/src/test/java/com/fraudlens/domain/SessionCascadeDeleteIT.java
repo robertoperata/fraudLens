@@ -55,7 +55,7 @@ class SessionCascadeDeleteIT {
         sessionRepository.save(session);
 
         String sessionId = session.getId();
-        assertThat(eventRepository.findBySessionId(sessionId)).hasSize(2);
+        assertThat(eventRepository.findBySessionIdOrderByCreatedAtDesc(sessionId)).hasSize(2);
 
         // When: the session is deleted
         sessionRepository.deleteById(sessionId);
@@ -63,7 +63,7 @@ class SessionCascadeDeleteIT {
 
         // Then: session is gone and all its events are gone with it
         assertThat(sessionRepository.findById(sessionId)).isEmpty();
-        assertThat(eventRepository.findBySessionId(sessionId))
+        assertThat(eventRepository.findBySessionIdOrderByCreatedAtDesc(sessionId))
                 .as("Events bound to the deleted session must be cascade-deleted")
                 .isEmpty();
     }
@@ -96,7 +96,7 @@ class SessionCascadeDeleteIT {
         sessionRepository.flush();
 
         // Then: s2's event is untouched
-        assertThat(eventRepository.findBySessionId(s2.getId()))
+        assertThat(eventRepository.findBySessionIdOrderByCreatedAtDesc(s2.getId()))
                 .as("Events of a non-deleted session must remain intact")
                 .hasSize(1);
     }

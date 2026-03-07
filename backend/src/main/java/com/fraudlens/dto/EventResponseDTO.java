@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,4 +20,5 @@ public class EventResponseDTO {
     private String url;
     private Long durationMs;
     private String metadata;
+    private Instant createdAt;
 }

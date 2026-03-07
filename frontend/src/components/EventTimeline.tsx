@@ -32,6 +32,9 @@ export function EventTimeline({ events }: { events: Event[] }) {
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-sm font-medium text-gray-900">{event.type}</span>
               <span className="text-xs text-gray-400">{event.durationMs} ms</span>
+              <time className="text-xs text-gray-400" dateTime={event.createdAt}>
+                {new Date(event.createdAt).toLocaleString()}
+              </time>
             </div>
             <p className="text-xs text-gray-500 mb-1 truncate max-w-sm" title={event.url}>
               {event.url}

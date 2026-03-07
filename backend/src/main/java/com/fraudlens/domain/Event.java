@@ -2,11 +2,15 @@ package com.fraudlens.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "events")
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -36,6 +40,10 @@ public class Event {
 
     @Column(columnDefinition = "TEXT")
     private String metadata;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false, nullable = false)
+    private Instant createdAt;
 
     @PrePersist
     private void generateId() {

@@ -42,7 +42,7 @@ class EventControllerTest {
 
     private EventResponseDTO buildDTO(String id, String sessionId) {
         return new EventResponseDTO(id, sessionId, EventType.PAGE_VISIT,
-                "https://example.com", 1000L, null);
+                "https://example.com", 1000L, null, null);
     }
 
     private EventRequestDTO buildRequest() {

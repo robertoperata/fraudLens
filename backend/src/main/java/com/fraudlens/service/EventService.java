@@ -27,7 +27,7 @@ public class EventService {
         if (!sessionRepository.existsById(sessionId)) {
             throw new ResourceNotFoundException("Session not found: " + sessionId);
         }
-        return eventMapper.toResponseDTOList(eventRepository.findBySessionId(sessionId));
+        return eventMapper.toResponseDTOList(eventRepository.findBySessionIdOrderByCreatedAtDesc(sessionId));
     }
 
     @Transactional

@@ -52,10 +52,10 @@ class EventServiceTest {
         Session s = buildSession("s1");
         Event e = buildEvent("e1", s);
         EventResponseDTO dto = new EventResponseDTO("e1", "s1", EventType.PAGE_VISIT,
-                "https://example.com", 1000L, null);
+                "https://example.com", 1000L, null, null);
 
         when(sessionRepository.existsById("s1")).thenReturn(true);
-        when(eventRepository.findBySessionId("s1")).thenReturn(List.of(e));
+        when(eventRepository.findBySessionIdOrderByCreatedAtDesc("s1")).thenReturn(List.of(e));
         when(eventMapper.toResponseDTOList(List.of(e))).thenReturn(List.of(dto));
 
         List<EventResponseDTO> result = eventService.getEventsForSession("s1");
@@ -81,7 +81,7 @@ class EventServiceTest {
         EventRequestDTO req = new EventRequestDTO(EventType.FORM_SUBMIT,
                 "https://example.com/form", 2000L, "{\"key\":\"val\"}");
         EventResponseDTO dto = new EventResponseDTO("e-new", "s1", EventType.FORM_SUBMIT,
-                "https://example.com/form", 2000L, "{\"key\":\"val\"}");
+                "https://example.com/form", 2000L, "{\"key\":\"val\"}", null);
 
         when(sessionRepository.findById("s1")).thenReturn(Optional.of(s));
         when(sessionRepository.save(any(Session.class))).thenReturn(s);
