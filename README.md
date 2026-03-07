@@ -28,3 +28,13 @@ The behaviour visible to the client (a string ID in the response and path) is fu
 ### JWT stored in memory (React context), not localStorage
 
 The JWT is stored exclusively in React state and is lost on page refresh — the user must re-login. This is intentional: `localStorage` is vulnerable to XSS. In production a `HttpOnly` refresh-token cookie would solve the UX trade-off.
+
+---
+
+### Session timestamp — manual entry in UTC (Zulu time)
+
+The `timestamp` field on a session represents when the session started and is required by the backend (`@NotBlank`). In a production system this would be set automatically by the server at session creation time.
+
+In this implementation the timestamp is entered manually via the form using a `datetime-local` picker. The picker displays and accepts time in **UTC**, and the frontend converts the value to **ISO 8601 Zulu format** (e.g. `2028-11-02T10:20:11Z`) before sending it to the backend.
+
+**Timezone note:** the `datetime-local` input has no timezone awareness — it stores a local wall-clock value. Because sessions originate from many countries, the entered time should always be treated as UTC regardless of the operator's browser locale. A production improvement would be to derive the expected UTC offset from the session's `country` field and display a converted local time alongside the UTC picker, so operators can cross-reference the session timestamp against the user's local time without manual conversion.
