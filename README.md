@@ -4,18 +4,29 @@ Full-stack fraud session analysis — Spring Boot backend, React frontend, Postg
 
 ---
 
-## Table of Contents
+## Content Structure
 
-1. [Running the Application](#1-running-the-application)
-2. [Architecture & Design Decisions](#2-architecture--design-decisions)
-3. [Risk Score Rules](#3-risk-score-rules)
-4. [Security Considerations](#4-security-considerations)
-5. [API Documentation](#5-api-documentation)
-6. [What I Would Improve With More Time](#6-what-i-would-improve-with-more-time)
+| Directory | Contents |
+|---|---|
+| `/backend` | Spring Boot application |
+| `/frontend` | React application |
+| `/prompts` | TXT prompts |
 
 ---
 
-## 1. Running the Application
+## Table of Contents
+
+1. [Content Structure](#content-structure)
+2. [Running the Application](#2-running-the-application)
+3. [Architecture & Design Decisions](#3-architecture--design-decisions)
+4. [Risk Score Rules](#4-risk-score-rules)
+5. [Security Considerations](#5-security-considerations)
+6. [API Documentation](#6-api-documentation)
+7. [What I Would Improve With More Time](#7-what-i-would-improve-with-more-time)
+
+---
+
+## 2. Running the Application
 
 ### Option 1 — Docker Compose (recommended)
 
@@ -125,7 +136,7 @@ The Vite dev server starts on **http://localhost:5173** with hot module replacem
 
 ---
 
-## 2. Architecture & Design Decisions
+## 3. Architecture & Design Decisions
 
 ### Tech Stack
 
@@ -198,7 +209,7 @@ The AI Risk Summary feature calls the **Anthropic Claude Haiku** model via **Spr
 
 ---
 
-## 3. Risk Score Rules
+## 4. Risk Score Rules
 
 The risk score is a integer (0–100) computed server-side on every read request. It is never stored. The score starts at 0 and accumulates rule weights additively, capped at 100.
 
@@ -218,7 +229,7 @@ The risk score is a integer (0–100) computed server-side on every read request
 
 ---
 
-## 4. Security Considerations
+## 5. Security Considerations
 
 ### JWT Secret Management
 
@@ -297,13 +308,13 @@ The risk score is a integer (0–100) computed server-side on every read request
 
 ---
 
-## 5. API Documentation
+## 6. API Documentation
 
 Swagger UI is available at **http://localhost:8080/swagger-ui.html** once the backend is running. All endpoints are documented with `@Operation` and `@ApiResponse` annotations. JWT Bearer authentication can be configured directly in the Swagger UI to test protected endpoints.
 
 ---
 
-## 6. What I Would Improve With More Time
+## 7. What I Would Improve With More Time
 
 ### Data Layer
 - **Pagination**: `GET /sessions` currently returns all records. Add `page` / `size` query parameters and return a `Page<SessionResponseDTO>` wrapper with total count.
