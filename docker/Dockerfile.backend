@@ -1,0 +1,21 @@
+# ── Build stage ───────────────────────────────────────────────────────────────
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /app
+
+# Copy POM first for dependency-cache layer
+COPY backend/pom.xml .
+RUN mvn dependency:go-offline -q
+
+# Build the application (tests are run separately in CI)
+COPY backend/src ./src
+RUN mvn package -DskipTests -q
+
+# ── Runtime stage ─────────────────────────────────────────────────────────────
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+COPY --from=build /app/target/fraudlens-*.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

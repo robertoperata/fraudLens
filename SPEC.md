@@ -136,16 +136,30 @@ No stack traces, internal class names, or sensitive data are ever included in er
 
 ## 4. Local Risk Score Rules
 
-> **Status: To Be Defined**
+The risk score is an integer between 0 and 100, computed server-side on every read request from the session's attributes and its associated events. It is **never stored in the database** — it is a derived, read-time enrichment.
 
-The risk scoring algorithm will be documented here once the rules are finalized. The score is an integer between 0 and 100, computed server-side from the session's events and attributes on every read request. It is never stored in the database.
+The score starts at 0 and accumulates rule weights additively. It is capped at 100 regardless of how many rules fire simultaneously.
 
-Placeholder categories:
-- Country-based signals
-- Event sequence patterns (e.g. LOGIN_ATTEMPT → FORM_SUBMIT timing)
-- Sensitive metadata in form submissions
-- Multiple failed login attempts
-- Anomalously short interaction durations
+### 4.1 Rules
+
+| Rule | Signal | Weight | Rationale |
+|---|---|---|---|
+| **Unusual country** | Session `country` is not in the low-risk country list | +15 | Anomalous origin relative to the expected user base |
+| **Rapid login-then-submit** | A `LOGIN_ATTEMPT` event is followed by a `FORM_SUBMIT` within 5 seconds | +25 | Human users rarely complete a form that fast; strong bot indicator |
+| **Sensitive form fields** | A `FORM_SUBMIT` event's `metadata.formFields` contains `card_number` or `cvv` | +20 | High-value data exfiltration pattern |
+| **Multiple login attempts** | Session contains more than one `LOGIN_ATTEMPT` event | +15 | Credential stuffing or brute-force signal |
+| **Bot-speed submission** | Any event has `durationMs` < 500 ms | +10 | Interaction too fast to be a human |
+| **Dangerous status** | Session `status` is `DANGEROUS` | +10 | Analyst-confirmed high-risk flag |
+| **Suspicious status** | Session `status` is `SUSPICIOUS` | +5 | Analyst-flagged for review |
+
+> **Maximum achievable score**: All rules firing simultaneously yields 15+25+20+15+10+10+5 = 100, which coincidentally equals the cap. In practice the maximum computed value before capping is 95 (dangerous status + all event rules), because a session cannot be both `DANGEROUS` (+10) and `SUSPICIOUS` (+5) at the same time.
+
+### 4.2 Design Constraints
+
+- Rules are stateless and deterministic — the same session + events always produce the same score.
+- Rule weights are defined as named constants in the implementation (see CLAUDE.md §5). No magic numbers.
+- Every rule has a corresponding unit test (see CLAUDE.md §6).
+- The algorithm is intentionally simple and auditable. It is not a machine-learning model.
 
 ---
 
@@ -242,32 +256,3 @@ Placeholder categories:
 | AC-UI-06 | User clicks "Delete Session" | — | Confirmation modal appears; session is only deleted after confirmation |
 | AC-UI-07 | User confirms deletion | — | Session is removed from the list without full page reload |
 | AC-UI-08 | User clicks "Add Event" in detail view | Form is submitted | New event appears in the timeline |
-
----
-
-## 6. What I Would Improve With More Time
-
-### Data Layer
-- **Pagination**: `GET /sessions` currently returns all records. Add `page` / `size` query parameters and return a `Page<SessionResponseDTO>` wrapper with total count.
-- **Full-text search on metadata**: Use PostgreSQL's `JSONB` operators or a GIN index to allow filtering events by metadata content.
-- **Audit log**: A separate `session_status_changes` table to track who changed a session's status and when.
-- **Soft delete**: Replace hard deletes with a `deleted_at` timestamp to support recovery and audit trails.
-
-### Backend
-- **Real user management**: Replace the seeded demo user with a full `users` CRUD and proper registration/password reset flows.
-- **Role-based access control**: Distinguish between `VIEWER` and `ANALYST` roles (e.g. only analysts can delete sessions).
-- **Rate limiting on all endpoints**: Extend Bucket4j limiting beyond the AI endpoint to prevent scraping or brute-force attacks.
-- **Distributed tracing**: Add OpenTelemetry instrumentation for request tracing across services.
-- **Metrics**: Expose Micrometer/Prometheus metrics (request latency, error rates, risk score distributions).
-- **Async AI calls**: Move AI risk summary generation to an async job with a polling or WebSocket notification pattern.
-
-### Frontend
-- **Real-time updates**: Use Server-Sent Events or WebSocket to push new sessions to the list without polling.
-- **Refresh token flow**: Implement silent token refresh so the user is not forced to re-login on page refresh.
-- **Accessibility**: Audit the UI against WCAG 2.1 AA — status badges, modals, and timelines need proper ARIA attributes.
-- **Error boundary**: Wrap views in React error boundaries to prevent a single API failure from crashing the whole app.
-
-### Infrastructure
-- **Horizontal scaling**: Replace the single Docker Compose setup with a Kubernetes manifest or a cloud deployment template.
-- **Secrets management**: Replace environment variable secrets with Vault or AWS Secrets Manager.
-- **CI/CD pipeline**: Add a GitHub Actions workflow that builds, tests, and publishes Docker images on merge to `main`.
