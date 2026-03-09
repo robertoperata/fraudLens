@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Sparkles, ArrowLeft, Plus, X } from 'lucide-react';
@@ -122,7 +123,9 @@ export function SessionDetailPage() {
           </button>
         </div>
         {summary ? (
-          <p className="text-sm text-gray-700 leading-relaxed">{summary}</p>
+          <div className="prose prose-sm max-w-none text-gray-700">
+            <ReactMarkdown>{summary}</ReactMarkdown>
+          </div>
         ) : (
           <p className="text-sm text-gray-400">Click Generate to get an AI-powered risk assessment.</p>
         )}

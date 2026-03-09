@@ -318,8 +318,10 @@ Swagger UI is available at **http://localhost:8080/swagger-ui.html** once the ba
 - **Distributed tracing**: Add OpenTelemetry instrumentation for request tracing across services.
 - **Metrics**: Expose Micrometer/Prometheus metrics (request latency, error rates, risk score distributions).
 - **Async AI calls**: Move AI risk summary generation to an async job with a polling or WebSocket notification pattern.
+- **Structured logging**: Add a `logback-spring.xml` configuration with a colored, readable console pattern, per-environment log level control via an environment variable, and suppression of noisy framework packages (Hibernate, Spring Security internals, Liquibase, Spring AI client). Add meaningful `@Slf4j` log statements to services and controllers — INFO for mutations (create, update, delete), DEBUG for reads and search, WARN for rate-limit hits and rejected JWT tokens.
 
 ### Frontend
+- **Richer AI summary formatting**: The AI Risk Summary response is rendered as Markdown via `react-markdown`. A future improvement would be to have the model return a structured response (e.g. JSON with separate `assessment` and `riskLevel` fields) so the UI can highlight the risk level badge separately from the narrative text, rather than relying on prompt-enforced formatting conventions.
 - **Real-time updates**: Use Server-Sent Events or WebSocket to push new sessions to the list without polling.
 - **Refresh token flow**: Implement silent token refresh so the user is not forced to re-login on page refresh.
 - **Accessibility**: Audit the UI against WCAG 2.1 AA — status badges, modals, and timelines need proper ARIA attributes.

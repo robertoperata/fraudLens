@@ -99,6 +99,13 @@
             <artifactId>spring-ai-starter-model-anthropic</artifactId>
         </dependency>
 
+        <!-- Apache HttpClient 5 — replaces SimpleClientHttpRequestFactory so Spring AI
+             can handle auth challenges and retries without HttpRetryException in streaming mode -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+
         <!-- MapStruct -->
         <dependency>
             <groupId>org.mapstruct</groupId>

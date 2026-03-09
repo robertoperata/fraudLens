@@ -66,8 +66,6 @@ fraudlens/
 │   ├── tailwind.config.js
 │   ├── tsconfig.json
 │   └── package.json
-├── scripts/
-│   └── simulate.py                   # Fraud/legit simulation script
 ├── docker-compose.yml
 └── README.md
 ```

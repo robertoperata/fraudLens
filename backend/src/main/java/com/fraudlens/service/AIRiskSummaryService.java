@@ -39,7 +39,7 @@ public class AIRiskSummaryService {
     private String buildPrompt(Session session, List<Event> events, int riskScore) {
         return """
                 Analyze the following user session for fraud risk and provide a concise 2-3 sentence
-                natural language assessment. End with "Risk level: LOW | MEDIUM | HIGH".
+                natural language assessment. Do not include a title or heading. End with "Risk level: LOW | MEDIUM | HIGH".
 
                 Session:
                 - Country: %s
