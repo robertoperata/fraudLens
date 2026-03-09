@@ -152,7 +152,9 @@ The Vite dev server starts on **http://localhost:5173** with hot module replacem
 
 **JPA Specifications for search** — `POST /sessions/search` uses composable `Specification<Session>` predicates rather than hand-written JPQL. Each filter (status, country, userId, ip) is a null-safe predicate combined with `Specification.and()`. This avoids string concatenation in queries and is trivially extensible with new filters.
 
-**UUID v4 string primary keys** — the spec uses short illustrative IDs like `"abc-123"`. This implementation generates UUID v4 strings (e.g. `"550e8400-e29b-41d4-a716-446655440000"`) server-side via `@PrePersist`. UUIDs are globally unique without coordination and resist enumeration-based IDOR attacks. The field type stays `String`, so path variables accept any string without a 400 error.
+**Primary key type: `String`, value: UUID v4** — the `id` field on both `Session` and `Event` is declared as `String` in the JPA entity, not as `java.util.UUID`. This is a deliberate choice: keeping it `String` means path variables stay as `@PathVariable String id`, which accepts any string value without Spring throwing a `400 Bad Request` on non-UUID input. It also keeps the API contract flexible and matches the illustrative IDs (`"abc-123"`, `"evt_001"`) used in the spec examples.
+
+The *value* assigned to that `String` field is a UUID v4 generated server-side via `@PrePersist` (e.g. `"550e8400-e29b-41d4-a716-446655440000"`). UUID v4 is preferred over sequential or short IDs because it is globally unique without coordination and resists enumeration-based IDOR attacks. A native `java.util.UUID` field type would have been the cleaner choice if we were certain IDs would always be UUIDs — `String` trades type safety for flexibility.
 
 *Performance trade-off:* UUID v4 stored as `VARCHAR(36)` causes B-tree index fragmentation (random inserts rather than append) and carries more storage overhead than native `uuid` (36 bytes vs. 16) or `BIGINT` (8 bytes). At this application's scale this is acceptable. A production improvement would be UUIDv7 (time-ordered, monotonically increasing, negligible fragmentation) or a native `uuid` column with `gen_random_uuid()`.
 
@@ -269,6 +271,29 @@ The risk score is a integer (0–100) computed server-side on every read request
 **How addressed:**
 - The admin password is read from an environment variable at startup and BCrypt-encoded (work factor 10) before being stored. The plaintext value never touches the database.
 - The `users` table stores only the BCrypt hash. Even with full database read access, an attacker cannot recover the original password without an offline brute-force attack against a deliberately slow hash.
+
+### Sensitive Data in Logs
+
+**Concern:** `application.properties` sets `logging.level.com.fraudlens=DEBUG` for development convenience. At this level, application code in controllers and services can log request context that includes session attributes — IP addresses, user IDs, countries — and Spring's filter chain can surface `Authorization` header values containing the raw JWT token. If those logs are shipped to a centralised log aggregator without scrubbing, PII and bearer tokens are exposed to anyone with log read access.
+
+**How addressed:**
+- `spring.jpa.show-sql=false` prevents Hibernate from logging SQL statements with their bind parameter values (which would expose every field written to or read from the database).
+- `GlobalExceptionHandler` logs the exception message and stack trace internally via `log.error(...)` but never writes request body content or user data to the log entry.
+- The `DEBUG` level is intentional for local development only. In production the level must be raised by setting the environment variable `LOGGING_LEVEL_COM_FRAUDLENS=INFO`, which suppresses all application-level debug output without changing the JAR.
+
+**Residual risk:** Spring Security's own filter-level logging at DEBUG can still print headers including `Authorization`. A production hardening step would be to add a `PatternLayout` or log filter that redacts `Authorization: Bearer .*` before log entries leave the process.
+
+---
+
+### No Rate Limiting on `POST /auth/login`
+
+**Concern:** The login endpoint has no throttling. An attacker can submit unlimited password guesses against a known username without being blocked, making it vulnerable to online brute-force and credential-stuffing attacks.
+
+**How addressed (partially):**
+- Passwords are stored as BCrypt hashes with work factor 10. Each verification takes ~100 ms of deliberate computation, limiting an attacker to roughly 10 attempts per second per thread against the live endpoint — significantly slower than attacking a fast hash like MD5 or SHA-256.
+- This is a deliberate scope reduction. Bucket4j is already in the project and rate-limits the AI endpoint; extending it to `/auth/login` (e.g. 5 attempts per minute per IP) is the immediate next step but was not implemented in this version.
+
+**Residual risk:** BCrypt slows guessing but does not cap it. Without an IP-based or username-based attempt counter, a distributed attack from many IPs would not be detected or blocked. Account lockout and CAPTCHA are the production-grade mitigations.
 
 ---
 

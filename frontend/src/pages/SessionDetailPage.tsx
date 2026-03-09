@@ -54,12 +54,16 @@ export function SessionDetailPage() {
   const handleAddEvent = (e: FormEvent) => {
     e.preventDefault();
     setEventError(null);
-    const body: EventRequest = {
-      ...eventForm,
-      // omit metadata entirely if blank rather than sending an empty string
-      metadata: eventForm.metadata?.trim() || undefined,
-    };
-    addEventMutation.mutate(body);
+    const trimmedMetadata = eventForm.metadata?.trim() || undefined;
+    if (trimmedMetadata) {
+      try {
+        JSON.parse(trimmedMetadata);
+      } catch {
+        setEventError('Metadata must be valid JSON (e.g. {"formFields": ["card_number"]})');
+        return;
+      }
+    }
+    addEventMutation.mutate({ ...eventForm, metadata: trimmedMetadata });
   };
 
   if (sessionLoading) return <p className="p-6 text-sm text-gray-500">Loading...</p>;
@@ -187,6 +191,8 @@ export function SessionDetailPage() {
                 onChange={(e) => setEventForm((f) => ({ ...f, url: e.target.value }))}
                 required
                 placeholder="/checkout/payment"
+                pattern="^/\S*$"
+                title="Must be an absolute path starting with / (e.g. /checkout/payment)"
                 className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

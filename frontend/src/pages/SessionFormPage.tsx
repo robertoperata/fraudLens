@@ -72,6 +72,21 @@ export function SessionFormPage() {
     mutation.mutate({ ...form, timestamp: toZuluTimestamp(form.timestamp) });
   };
 
+  const FIELD_PROPS: Partial<Record<keyof SessionRequest, React.InputHTMLAttributes<HTMLInputElement>>> = {
+    ip: {
+      placeholder: '1.2.3.4',
+      pattern: String.raw`^(\d{1,3}\.){3}\d{1,3}$|.*:.*`,
+      title: 'Valid IPv4 (e.g. 1.2.3.4) or IPv6 address',
+    },
+    country: {
+      placeholder: 'IT',
+      pattern: '[A-Z]{2}',
+      minLength: 2,
+      maxLength: 2,
+      title: '2-letter ISO country code in uppercase (e.g. IT, US)',
+    },
+  };
+
   const field = (label: string, key: keyof SessionRequest) => (
     <div key={key}>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
@@ -79,6 +94,7 @@ export function SessionFormPage() {
         value={form[key] as string}
         onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
         required
+        {...(FIELD_PROPS[key] ?? {})}
         className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
