@@ -22,8 +22,8 @@ public class EventRequestDTO {
 
     @NotBlank
     @Pattern(
-            regexp = "^/[^\\s]*$",
-            message = "must be an absolute URL path starting with / (e.g. /checkout/payment)"
+            regexp = "^(https?://[^\\s]+|/[^\\s]*)$",
+            message = "must be a valid URL (e.g. https://example.com/page) or an absolute path (e.g. /checkout/payment)"
     )
     private String url;
 
